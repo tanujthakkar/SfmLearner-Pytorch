@@ -7,8 +7,10 @@ from torch.nn.init import xavier_uniform_, zeros_
 def downsample_conv(in_planes, out_planes, kernel_size=3):
     return nn.Sequential(
         nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=2, padding=(kernel_size-1)//2),
+        nn.BatchNorm2d(out_planes)
         nn.ReLU(inplace=True),
         nn.Conv2d(out_planes, out_planes, kernel_size=kernel_size, padding=(kernel_size-1)//2),
+        nn.BatchNorm2d(out_planes)
         nn.ReLU(inplace=True)
     )
 
@@ -23,6 +25,7 @@ def predict_disp(in_planes):
 def conv(in_planes, out_planes):
     return nn.Sequential(
         nn.Conv2d(in_planes, out_planes, kernel_size=3, padding=1),
+        nn.BatchNorm2d(out_planes)
         nn.ReLU(inplace=True)
     )
 
@@ -30,6 +33,7 @@ def conv(in_planes, out_planes):
 def upconv(in_planes, out_planes):
     return nn.Sequential(
         nn.ConvTranspose2d(in_planes, out_planes, kernel_size=3, stride=2, padding=1, output_padding=1),
+        nn.BatchNorm2d(out_planes)
         nn.ReLU(inplace=True)
     )
 
