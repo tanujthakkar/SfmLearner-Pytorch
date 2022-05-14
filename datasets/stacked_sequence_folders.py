@@ -3,6 +3,7 @@ import numpy as np
 from imageio import imread
 from path import Path
 import random
+import torch
 
 
 def load_as_float(path, sequence_length):
@@ -52,3 +53,28 @@ class SequenceFolder(data.Dataset):
 
     def __len__(self):
         return len(self.samples)
+
+
+def main():
+
+    train_set = SequenceFolder(
+        "../../Data/SfMLearnerData/",
+        seed=0,
+        train=True,
+        sequence_length=3
+    )
+
+    x, y, z, w = train_set[0]
+    print(type(x), type(y), type(z), type(w))
+
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_set, batch_size=1, shuffle=True,
+    #     num_workers=0, pin_memory=True)
+
+    # iterator = iter(train_loader)
+
+    # x, y, z, w = iterator.next()
+
+
+if __name__ == '__main__':
+    main()

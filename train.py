@@ -100,8 +100,8 @@ def main():
     normalize = custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                             std=[0.5, 0.5, 0.5])
     train_transform = custom_transforms.Compose([
-        custom_transforms.RandomHorizontalFlip(),
-        custom_transforms.RandomScaleCrop(),
+        # custom_transforms.RandomHorizontalFlip(),
+        # custom_transforms.RandomScaleCrop(),
         custom_transforms.ArrayToTensor(),
         normalize
     ])
@@ -111,8 +111,8 @@ def main():
     print("=> fetching scenes in '{}'".format(args.data))
     train_set = SequenceFolder(
         args.data,
-        transform=train_transform,
         seed=args.seed,
+        transform=train_transform,
         train=True,
         sequence_length=args.sequence_length
     )
@@ -134,8 +134,8 @@ def main():
     else:
         val_set = SequenceFolder(
             args.data,
-            transform=valid_transform,
             seed=args.seed,
+            transform=valid_transform,
             train=False,
             sequence_length=args.sequence_length,
         )
