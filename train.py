@@ -187,6 +187,7 @@ def main():
     optimizer = torch.optim.Adam(optim_params,
                                  betas=(args.momentum, args.beta),
                                  weight_decay=args.weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
 
     with open(args.save_path/args.log_summary, 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter='\t')
@@ -227,7 +228,7 @@ def main():
         elif args.with_gt:
             errors, error_names = validate_with_gt(args, val_loader, disp_net, epoch, logger, tb_writer)
         else:
-            errors, error_names = validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer)
+            errors, error_names = validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, optimizer, scheduler)
         error_string = ', '.join('{} : {:.3f}'.format(name, error) for name, error in zip(error_names, errors))
         logger.valid_writer.write(' * Avg {}'.format(error_string))
 
@@ -337,7 +338,7 @@ def train(args, train_loader, disp_net, pose_exp_net, optimizer, epoch_size, log
 
 
 @torch.no_grad()
-def validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
+def validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3, optimizer, scheduler):
     global device
     batch_time = AverageMeter()
     losses = AverageMeter(i=3, precision=4)
@@ -396,6 +397,8 @@ def validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger,
 
         loss = w1*loss_1 + w2*loss_2 + w3*loss_3
         losses.update([loss, loss_1, loss_2])
+
+        scheduler.step(loss)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
