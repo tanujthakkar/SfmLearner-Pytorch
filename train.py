@@ -338,7 +338,7 @@ def train(args, train_loader, disp_net, pose_exp_net, optimizer, epoch_size, log
 
 
 @torch.no_grad()
-def validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3, optimizer, scheduler):
+def validate_without_gt(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
     global device
     batch_time = AverageMeter()
     losses = AverageMeter(i=3, precision=4)
