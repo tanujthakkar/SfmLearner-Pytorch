@@ -7,7 +7,11 @@ import datetime
 from collections import OrderedDict
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import os
+import re
 
+def read_directory(image_set: str) -> list:
+    return [os.path.join(image_set,  f) for f in sorted(os.listdir(image_set), key=lambda x:int(re.sub("\D","",x)))]
 
 def save_path_formatter(args, parser):
     def is_default(key, value):
