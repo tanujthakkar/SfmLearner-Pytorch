@@ -100,9 +100,11 @@ def main():
     normalize = custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                             std=[0.5, 0.5, 0.5])
     train_transform = custom_transforms.Compose([
-        # custom_transforms.RandomHorizontalFlip(),
-        # custom_transforms.RandomScaleCrop(),
+        custom_transforms.RandomHorizontalFlip(),
+        custom_transforms.RandomScaleCrop(),
         custom_transforms.ArrayToTensor(),
+        custom_transforms.GaussianNoise(),
+        custom_transforms.ColorJitter(),
         normalize
     ])
 
