@@ -3,6 +3,7 @@ import torch
 import random
 import numpy as np
 from skimage.transform import resize
+from torchvision import transforms
 
 '''Set of tranform random routines that takes list of inputs as arguments,
 in order to have random but coherent transformations.'''
@@ -82,3 +83,23 @@ class RandomScaleCrop(object):
         output_intrinsics[1,2] -= offset_y
 
         return cropped_images, output_intrinsics
+
+class GaussianNoise(object):
+    """Randomly adds gaussian blur to the images"""
+
+    def __call__(self, images, intrinsics):
+        for image in images:
+            image = image + (0.1 ** 0.5) * torch.randn(image.shape)
+        return images, intrinsics
+
+
+class ColorJitter(object):
+    """Randomly changes the color, saturation and hue of the images"""
+
+    def __init__(self):
+        self.transform = transforms.ColorJitter()
+
+    def __call__(self, images, intrinsics):
+        for image in images:
+            image = self.transform(image)
+        return images, intrinsics
