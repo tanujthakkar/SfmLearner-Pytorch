@@ -88,8 +88,9 @@ class GaussianNoise(object):
     """Randomly adds gaussian blur to the images"""
 
     def __call__(self, images, intrinsics):
-        for image in images:
-            image = image + (0.1 ** 0.5) * torch.randn(image.shape)
+        if random.random() < 0.5:
+            for image in images:
+                image = image + (0.1 ** 0.5) * torch.randn(image.shape)
         return images, intrinsics
 
 
@@ -100,6 +101,7 @@ class ColorJitter(object):
         self.transform = transforms.ColorJitter()
 
     def __call__(self, images, intrinsics):
-        for image in images:
-            image = self.transform(image)
+        if random.random() < 0.5:
+            for image in images:
+                image = self.transform(image)
         return images, intrinsics
