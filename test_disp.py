@@ -98,6 +98,7 @@ def main():
         if args.output_dir is not None:
             if j == 0:
                 predictions = np.zeros((len(test_files), *pred_disp.shape))
+                print("Created predictions")
             predictions[j] = 1/pred_disp
 
         gt_depth = sample['gt_depth']
