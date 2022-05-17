@@ -203,11 +203,11 @@ def main():
     if args.pretrained_disp or args.evaluate:
         logger.reset_valid_bar()
         if args.with_gt and args.with_pose:
-            errors, error_names = validate_with_gt_pose(args, val_loader, disp_net, pose_exp_net, 0, logger, tb_writer)
+            errors, error_names = validate_with_gt_pose(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, 0, logger, tb_writer)
         elif args.with_gt:
-            errors, error_names = validate_with_gt(args, val_loader, disp_net, 0, logger, tb_writer)
+            errors, error_names = validate_with_gt(args, optimizer, scheduler, val_loader, disp_net, 0, logger, tb_writer)
         else:
-            errors, error_names = validate_without_gt(args, val_loader, disp_net, pose_exp_net, 0, logger, tb_writer)
+            errors, error_names = validate_without_gt(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, 0, logger, tb_writer)
         for error, name in zip(errors, error_names):
             tb_writer.add_scalar(name, error, 0)
         error_string = ', '.join('{} : {:.3f}'.format(name, error) for name, error in zip(error_names[2:9], errors[2:9]))
@@ -218,19 +218,21 @@ def main():
 
         # train for one epoch
         logger.reset_train_bar()
-        train_loss = train(args, train_loader, disp_net, pose_exp_net, optimizer, args.epoch_size, logger, tb_writer)
+        loss, train_loss = train(args, train_loader, disp_net, pose_exp_net, optimizer, args.epoch_size, logger, tb_writer)
         logger.train_writer.write(' * Avg Loss : {:.3f}'.format(train_loss))
 
         # evaluate on validation set
         logger.reset_valid_bar()
         if args.with_gt and args.with_pose:
-            errors, error_names = validate_with_gt_pose(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer)
+            errors, error_names = validate_with_gt_pose(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer)
         elif args.with_gt:
-            errors, error_names = validate_with_gt(args, val_loader, disp_net, epoch, logger, tb_writer)
+            errors, error_names = validate_with_gt(args, optimizer, scheduler, val_loader, disp_net, epoch, logger, tb_writer)
         else:
-            errors, error_names = validate_without_gt(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, optimizer, scheduler)
+            errors, error_names = validate_without_gt(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer)
         error_string = ', '.join('{} : {:.3f}'.format(name, error) for name, error in zip(error_names, errors))
         logger.valid_writer.write(' * Avg {}'.format(error_string))
+
+        scheduler.step(loss)
 
         for error, name in zip(errors, error_names):
             tb_writer.add_scalar(name, error, epoch)
@@ -334,7 +336,7 @@ def train(args, train_loader, disp_net, pose_exp_net, optimizer, epoch_size, log
 
         n_iter += 1
 
-    return losses.avg[0]
+    return loss, losses.avg[0]
 
 
 @torch.no_grad()
@@ -398,8 +400,6 @@ def validate_without_gt(args, optimizer, scheduler, val_loader, disp_net, pose_e
         loss = w1*loss_1 + w2*loss_2 + w3*loss_3
         losses.update([loss, loss_1, loss_2])
 
-        scheduler.step(loss)
-
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -421,7 +421,7 @@ def validate_without_gt(args, optimizer, scheduler, val_loader, disp_net, pose_e
 
 
 @torch.no_grad()
-def validate_with_gt_pose(args, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
+def validate_with_gt_pose(args, optimizer, scheduler, val_loader, disp_net, pose_exp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
     global device
     batch_time = AverageMeter()
     depth_error_names = ['abs_diff', 'abs_rel', 'sq_rel', 'a1', 'a2', 'a3']
@@ -518,7 +518,7 @@ def validate_with_gt_pose(args, val_loader, disp_net, pose_exp_net, epoch, logge
 
 
 @torch.no_grad()
-def validate_with_gt(args, val_loader, disp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
+def validate_with_gt(args, optimizer, scheduler, val_loader, disp_net, epoch, logger, tb_writer, sample_nb_to_log=3):
     global device
     batch_time = AverageMeter()
     error_names = ['abs_diff', 'abs_rel', 'sq_rel', 'a1', 'a2', 'a3']
