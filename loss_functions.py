@@ -4,6 +4,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from inverse_warp import inverse_warp
+from skimage.metrics import structural_similarity as ssim
 
 
 def photometric_reconstruction_loss(tgt_img, ref_imgs, intrinsics,
@@ -23,7 +24,7 @@ def photometric_reconstruction_loss(tgt_img, ref_imgs, intrinsics,
 
         warped_imgs = []
         diff_maps = []
-
+        ssim_loss = 0.0
         for i, ref_img in enumerate(ref_imgs_scaled):
             current_pose = pose[:, i]
 
@@ -31,6 +32,11 @@ def photometric_reconstruction_loss(tgt_img, ref_imgs, intrinsics,
                                                         intrinsics_scaled,
                                                         rotation_mode, padding_mode)
             diff = (tgt_img_scaled - ref_img_warped) * valid_points.unsqueeze(1).float()
+            
+            ssim_ref_img = np.transpose(ref_img_warped[0].detach().cpu().numpy().copy(), (1,2,0)) 
+            ssim_tgt_img = np.transpose(tgt_img_scaled[0].detach().cpu().numpy().copy(), (1, 2, 0))
+
+            ssim_loss += 0.5*ssim(ssim_tgt_img, ssim_ref_img, data_range=ssim_tgt_img.max() - ssim_tgt_img.min(), multichannel=True)
 
             if explainability_mask is not None:
                 diff = diff * explainability_mask[:,i:i+1].expand_as(diff)
@@ -41,7 +47,7 @@ def photometric_reconstruction_loss(tgt_img, ref_imgs, intrinsics,
             warped_imgs.append(ref_img_warped[0])
             diff_maps.append(diff[0])
 
-        return reconstruction_loss, warped_imgs, diff_maps
+        return reconstruction_loss, warped_imgs, diff_maps, ssim_loss
 
     warped_results, diff_results = [], []
     if type(explainability_mask) not in [tuple, list]:
@@ -50,12 +56,14 @@ def photometric_reconstruction_loss(tgt_img, ref_imgs, intrinsics,
         depth = [depth]
 
     total_loss = 0
+    total_ssim_loss = 0.0
     for d, mask in zip(depth, explainability_mask):
-        loss, warped, diff = one_scale(d, mask)
+        loss, warped, diff, ssim_loss = one_scale(d, mask)
         total_loss += loss
+        total_ssim_loss += (1 - ssim_loss)
         warped_results.append(warped)
         diff_results.append(diff)
-    return total_loss, warped_results, diff_results
+    return total_loss, warped_results, diff_results, total_ssim_loss
 
 
 def explainability_loss(mask):
